@@ -293,6 +293,7 @@ end
 
 SLASH_KEEP1 = "/keep"
 SlashCmdList["KEEP"] = function(msg)
+    -- keep command
     if msg == "list" then
         print("== Keep List ==")
         if next(keepList) == nil then
@@ -303,24 +304,31 @@ SlashCmdList["KEEP"] = function(msg)
                 print("  - " .. (link or "Unknown (" .. itemId .. ")"))
             end
         end
-    elseif string.sub(msg, 1, 3) == "add" then
-        local itemId = tonumber(string.match(msg, "item:(%d+)")) or 0
-        if itemId ~= 0 then
-            keepList[itemId] = true
-            local _, link = GetItemInfo(itemId)
-            print("Added to keep list:(" .. (link or "Unknown") .. ")")
-        end
+    -- remove command
     elseif string.sub(msg, 1, 6) == "remove" then
         local itemId = tonumber(string.match(msg, "item:(%d+)")) or 0
-        if itemId ~= 0 then
+        local _, link = GetItemInfo(itemId)
+        if itemId ~= 0 and keepList[itemId] == true then
             keepList[itemId] = nil
-            local _, link = GetItemInfo(itemId)
-            print("Removed from keep list:(" .. (link or "Unknown") .. ")")
+            print("Removed from keep list: " .. (link or "Unknown"))
+        elseif keepList[itemId] == nil then
+            print((link or "Unknown") .. " is not being kept")
         end
+    -- clear command
     elseif string.sub(msg, 1, 5) == "clear" then
         StaticPopup_Show("SELL_OMATIC_CLEAR_KEEP")
+    -- add command
+    elseif string.match(msg, "item:(%d+)") then
+        local itemId = tonumber(string.match(msg, "item:(%d+)")) or 0
+        local _, link = GetItemInfo(itemId)
+        if itemId ~= 0 and keepList[itemId] == nil then
+            keepList[itemId] = true
+            print("Added to keep list: " .. (link or "Unknown"))
+        elseif keepList[itemId] == true then
+            print((link or "Unknown") .. " is already being kept")
+        end
     else
-        print("/keep add [item]")
+        print("/keep [item]")
         print("/keep remove [item]")
         print("/keep list")
         print("/keep clear")
