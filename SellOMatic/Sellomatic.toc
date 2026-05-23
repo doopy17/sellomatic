@@ -2,7 +2,7 @@
 ## Title: SellOMatic
 ## Version: 1.0
 ## Authors: Lazyloafs, doofy
-## SavedVariables: SellOMatic_Settings, keepList
+## SavedVariables: SellOMatic_Settings, keepList, deleteList
 ## Notes: Sells items based on quality selection. Type /sellomatic for configuration
 Sellomatic.lua
 Sellomatic.xml
