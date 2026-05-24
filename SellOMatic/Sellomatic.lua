@@ -141,8 +141,7 @@ function DeleteNextItem()
 end
 
 local forcePrint = true
-
-function PrintSellSummary(totalItemsSold, totalGoldGained)
+function PrintSellSummary(totalItemsSold, totalGoldGained, forcePrint)
     if not totalItemsSold or totalItemsSold <= 0 then return end
 
     local iconSize = select(2, GetChatWindowInfo(1)) - 2
@@ -208,6 +207,32 @@ function SellItems(quality, sellOnlyType)
                                     UseContainerItem(bag, slot)
                                     itemWasSold = true
                                 end
+                            end
+                        end
+                    elseif sellOnlyType == "KnownRecipes" then
+                        if itemType == "Recipe" and not (itemName and string.find(itemName, "Tome of Echo")) then
+                        local function IsRecipeAlreadyKnown(bag, slot)
+                            local ScanTooltip = CreateFrame("GameTooltip", "SellOMaticScanTooltip", nil, "GameTooltipTemplate")
+                            ScanTooltip:SetOwner(UIParent, "ANCHOR_NONE")
+                            ScanTooltip:ClearLines()
+                            ScanTooltip:SetBagItem(bag, slot)
+                            
+                            -- Loop through all lines of text currently visible on the item tooltip
+                            for i = 1, ScanTooltip:NumLines() do
+                                local leftLine = _G["SellOMaticScanTooltipTextLeft" .. i]
+                                if leftLine then
+                                    local text = leftLine:GetText()
+                                    -- Check for the English string or the game's localized default global string
+                                    if text and (string.find(text, "Already Known") or text == ITEM_SPELL_KNOWN) then
+                                        return true
+                                    end
+                                end
+                            end
+                            return false
+                        end
+                            if IsRecipeAlreadyKnown(bag, slot) then
+                                UseContainerItem(bag, slot)
+                                itemWasSold = true
                             end
                         end
                     else
@@ -347,9 +372,26 @@ local function DoAutoSell()
         totalGoldGained = totalGoldGained + gold2
         totalItemsSold = totalItemsSold + items2
     end
+    if SellOMatic_Settings.sellKnownRecipes then
+        local items, gold = SellItems(1, "KnownRecipes")
+        totalGoldGained = totalGoldGained + gold
+        totalItemsSold = totalItemsSold + items
+
+        local items2, gold2 = SellItems(2, "KnownRecipes")
+        totalGoldGained = totalGoldGained + gold2
+        totalItemsSold = totalItemsSold + items2
+
+        local items3, gold3 = SellItems(3, "KnownRecipes")
+        totalGoldGained = totalGoldGained + gold3
+        totalItemsSold = totalItemsSold + items3
+
+        local items4, gold4 = SellItems(4, "KnownRecipes")
+        totalGoldGained = totalGoldGained + gold4
+        totalItemsSold = totalItemsSold + items4
+    end
     
     -- Print once with all accumulated totals
-    PrintSellSummary(totalItemsSold, totalGoldGained, false)
+    PrintSellSummary(totalItemsSold, totalGoldGained)
 end
 
 local isInitializing = false
@@ -468,8 +510,18 @@ local function InitializeCheckboxes() -- addon options checkboxes
         end)
     SellOMaticOptionSellDarkmoonCards:SetChecked(SellOMatic_Settings.sellDarkmoonCards or false)
 
+    SellOMaticOptionSellKnownRecipes = CreateOptionCheckbox("SellOMaticOptionSellKnownRecipes", SellOMatic_InterfacePanel,
+        "Sell known profession recipes", "TOPLEFT", SellOMaticOptionSellDarkmoonCards, "BOTTOMLEFT", 0, -6,
+        function(self)
+            if isInitializing then return end
+            local isChecked = self:GetChecked()
+            SellOMatic_Settings.sellKnownRecipes = isChecked
+            SellOMaticOptionSellKnownRecipes:SetChecked(isChecked)
+        end)
+    SellOMaticOptionSellKnownRecipes:SetChecked(SellOMatic_Settings.sellKnownRecipes or false)
+
     SellOMaticOptionDeleteList = CreateOptionCheckbox("SellOMaticOptionDeleteList", SellOMatic_InterfacePanel,
-        "Delete list - WIP", "TOPLEFT", SellOMaticOptionSellDarkmoonCards, "BOTTOMLEFT", -16, -6,
+        "Delete list - WIP", "TOPLEFT", SellOMaticOptionSellKnownRecipes, "BOTTOMLEFT", -16, -6,
         function(self)
             if isInitializing then return end
             local isChecked = self:GetChecked()
